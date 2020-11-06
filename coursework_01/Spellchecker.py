@@ -162,6 +162,7 @@ def incorrect(word):
             # Add word to dictionary
             dictionary.append(word)
             print(f"{user_input} is added to the dictionary")
+            update_dictionary()
             print(Format.blue + "_".center(20, '_') + Format.end)
             stats[len(stats) - 1].correct_sp += 1
             return word
@@ -265,6 +266,11 @@ def file_check():
 def check_to_file(inp):
     # Time elapsed calculated
     stats[len(stats) - 1].time_elapsed = datetime.now() - stats[len(stats) - 1].date_time
+    # Update dictionary
+    print("Updating dictionary. Please wait")
+    update_dictionary()
+    time.sleep(0.5)
+    print("Dictionary updated")
     new_filename = ''
     # Presence check filename
     while new_filename == '':
@@ -292,6 +298,14 @@ def y_or_n(inp):
     # No
     else:
         return False
+
+
+def update_dictionary():
+    file = open("EnglishWords.txt", "w")
+    dictionary.sort()
+    for word in dictionary:
+        file.write(f'{word}\n')
+    file.close()
 
 
 # Upload all English Words to array
