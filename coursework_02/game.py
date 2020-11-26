@@ -3,7 +3,8 @@ import time
 geometry = '1920x1080'
 
 
-def update(ind,):
+def update(ind):
+    global character_status, i
     if character_status == CHARACTER_STATUS[1]:
         ind += 1
         if not(ind < 7):
@@ -15,14 +16,34 @@ def update(ind,):
         ind += 1
         if ind == 11:
             ind = 0
-
         canvas.itemconfig(character, image=user_idle[ind])
+
+    elif character_status == CHARACTER_STATUS[2]:
+        print(i)
+        if i <= 9:
+            canvas.itemconfig(character, image=user_jump[0])
+            canvas.move(character, 0, -30)
+            i += 1
+        elif i <= 11:
+            canvas.itemconfig(character, image=user_jump[i%2])
+            i += 1
+        elif i <= 21:
+            canvas.itemconfig(character, image=user_jump[3])
+            canvas.move(character, 0, 30)
+            i += 1
+        else:
+            character_status = CHARACTER_STATUS[1]
+            i = 0
+            canvas.itemconfig(character, image=user_run[0])
+
     print(character_status)
-    root.after(80, update, ind)
+    root.after(70, update, ind)
 
 
 def go():
     global character_status
+    for k in menu:
+        k.destroy()
     character_status = CHARACTER_STATUS[1]
     pos = canvas.coords(character)
     if pos[0] < 900:
@@ -36,8 +57,8 @@ def go():
 
 def bg():
     global background
-    for i in background:
-        for j in i:
+    for k in background:
+        for j in k:
             canvas.move(j, -0.5, 0)
             if canvas.coords(j)[0] <= (960 - 1920):
                 canvas.coords(j, (960 + (1920/2)), 400)
@@ -47,10 +68,10 @@ def bg():
 
 def Floor():
     global floor
-    for i in floor:
-        canvas.move(i, -2, 0)
-        if canvas.coords(i)[0] <= (100 - 640):
-            canvas.coords(i, (100 + ((640/2) * 7)), 900)
+    for k in floor:
+        canvas.move(k, -2, 0)
+        if canvas.coords(k)[0] <= (100 - 640):
+            canvas.coords(k, (100 + ((640/2) * 7)), 900)
 
     root.after(500, Floor)
 
@@ -63,7 +84,14 @@ def right(event=None):
 
 def left(event=None):
     print("l key pressed")
-    go()
+    for i in menu:
+        i.destroy()
+
+
+def jump(event=None, k=0):
+    global character_status
+    character_status = CHARACTER_STATUS[2]
+
 
 
 root = Tk()
@@ -71,6 +99,7 @@ root.geometry(geometry)
 canvas = Canvas(width='9000', height='1080')
 canvas.pack()
 CHARACTER_STATUS = ("idle", "run", "jump", "fall", "ledge")
+i = 0
 
 # Setting up background & foreground
 background = [[], [], []]
@@ -92,22 +121,31 @@ background[2].append(canvas.create_image(canvas.coords(background[1][1])[0] + bg
 background[2].append(canvas.create_image(canvas.coords(background[1][2])[0] + bg3.width(), 400, image=bg3))
 background[2].append(canvas.create_image(canvas.coords(background[1][3])[0] + bg4.width(), 400, image=bg4))
 
-flr = [PhotoImage(file='assets/foreground/floor1.gif').zoom(4) for i in range(7)]
-floor = [canvas.create_image((100 + (flr[i].width()*i)), 900, image=flr[i]) for i in range(7)]
+menu = [Button(canvas, text="start", command=go)]
+for k in menu:
+    canvas.create_window(1000, 200, window=k, height=100, width=400)
+
+flr = [PhotoImage(file='assets/foreground/floor1.gif').zoom(4) for k in range(7)]
+floor = [canvas.create_image((100 + (flr[k].width()*k)), 900, image=flr[k]) for k in range(7)]
 
 # dimensions = "image size: %dx%d" % (flr.width(), flr.height())
 print(flr[0].height())
 
 # Setting up Character
 char_pos = [100, 700]
-user_idle = [PhotoImage(file="assets/sprites/idle.gif", format=f"gif -index {i}").zoom(10) for i in range(11)]
-user_run = [PhotoImage(file="assets/sprites/run.gif", format=f"gif -index {i}").zoom(10) for i in range(7)]
+user_idle = [PhotoImage(file="assets/sprites/idle.gif", format=f"gif -index {k}").zoom(10) for k in range(11)]
+user_run = [PhotoImage(file="assets/sprites/run.gif", format=f"gif -index {k}").zoom(10) for k in range(7)]
+user_jump = [PhotoImage(file='assets/sprites/jump.png').zoom(10), PhotoImage(file='assets/sprites/landing.png').zoom(10)]
+for k in range(2):
+    user_jump.append(PhotoImage(file="assets/sprites/mid air.gif", format=f"gif -index {k}").zoom(10))
+
 character = canvas.create_image(char_pos[0], char_pos[1], image=user_idle[0])
 character_status = CHARACTER_STATUS[0]
 
 # Setting up controls
-left_key, right_key = "Left", "Right"
+left_key, right_key, space = "Left", "Right", "space"
 canvas.bind_all(f"<{right_key}>", lambda e: right())
+canvas.bind_all(f"<{space}>", lambda e: jump())
 canvas.bind_all(f"<{left_key}>", lambda e: left())
 
 
