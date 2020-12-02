@@ -13,12 +13,11 @@ root.geometry(geometry)
 
 
 def update(ind):
-    global character_status, i
+    global character_status, update_i
     if character_status == CHARACTER_STATUS[1]:
         ind += 1
         if not (ind < 7):
             ind = 0
-        # print(ind)
         canvas.itemconfig(character, image=user_run[ind])
 
     elif character_status == CHARACTER_STATUS[0]:
@@ -28,45 +27,40 @@ def update(ind):
         canvas.itemconfig(character, image=user_idle[ind])
 
     elif character_status == CHARACTER_STATUS[2]:
-        # print(i)
-        if i <= 9:
+        if update_i <= 9:
             canvas.itemconfig(character, image=user_jump[0])
             canvas.move(character, 0, -30)
-            i += 1
-        elif i <= 11:
-            canvas.itemconfig(character, image=user_jump[i % 2])
-            i += 1
-        elif i <= 21:
+            update_i += 1
+        elif update_i <= 11:
+            canvas.itemconfig(character, image=user_jump[update_i % 2])
+            update_i += 1
+        elif update_i <= 21:
             canvas.itemconfig(character, image=user_jump[3])
             canvas.move(character, 0, 30)
-            i += 1
+            update_i += 1
         else:
             character_status = CHARACTER_STATUS[1]
-            i = 0
+            update_i = 0
             canvas.itemconfig(character, image=user_run[0])
     elif character_status == CHARACTER_STATUS[4]:
         pass
 
-
-    # print("number of overlaps", overlapping(character))
     root.after(70, update, ind)
 
 
 def go():
     global character_status, txt, pause_button
-    for k in menu:
-        k.destroy()
+    for i in menu:
+        i.destroy()
     character_status = CHARACTER_STATUS[1]
     pos = canvas.coords(character)
     if pos[0] < 900:
         canvas.move(character, 10, 0)
         root.after(30, go)
         pos = canvas.coords(character)
-        # print(pos)
+
     bg()
     Floor()
-    # scoreboard = Label(text=f"{score} seconds",  bg="#b36029", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
-    # canvas.create_window(1000, 100, window=scoreboard, height=100, width=400, )
     start()
     pause_button = Button(canvas, text="| |", command=pause_command, bg="#db9160", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
     pause = canvas.create_window(1870, 50, window=pause_button, height=100, width=100, tag="pause_canvas")
@@ -94,8 +88,6 @@ def start():
     global score, old, txt
     if character_status != CHARACTER_STATUS[4]:
         new = time.time()
-        print(new)
-        print(f"new {new} | old {old}")
         if (new - old) >= 1:
             try:
                 canvas.delete(txt)
@@ -108,20 +100,38 @@ def start():
     root.after(5000, start)
 
 
+def main_menu():
+    pass
+
+
 def config(event=None):
-    global w
-    for k in menu:
-        k.destroy()
-    w = LabelFrame(text=f"Jump: {space}")
-    canvas.create_window(1000, 500, window=w, height=100, width=400)
-    canvas.unbind_all("<space>")
-    canvas.bind_all("<Key>", new_pressed)
+    global space
+    for i in menu:
+        i.destroy()
+
+    canvas1 = Canvas(canvas)
+    canvas.create_window(1000, 500, window=canvas1)
+    space = StringVar(canvas1)
+    space.set(extra_keys[0])
+    label1 = Label(canvas1, text="Jump:", font=("Times New Roman", 20, "bold"))
+    label1.grid(row=0, column=0)
+    emptylabel = Label(canvas1)
+    emptylabel.grid(row=1)
+    w = OptionMenu(canvas1, space, *(keyboard + extra_keys))
+    w.config(font=("Times New Roman", 20, "italic"))
+    w.grid(row=0, column=1)
+    menu_button = Button(canvas1, text="Menu", command=lambda: main_menu(), font=("Times New Roman", 20))
+    menu_button.grid(row=2, column=0, columnspan=2)
+
+    # w = LabelFrame(text=f"Jump: {space}")
+
+    # canvas.unbind_all("<space>")
+    # canvas.bind_all("<Key>", new_pressed)
 
 
 def new_pressed(e):
     global space
     space = e.char
-    print(e.char)
     w['text'] = f"Jump: {space}"
     canvas.unbind_all("<Key>")
     canvas.bind_all(f"<{space}>", jump)
@@ -132,8 +142,8 @@ def new_pressed(e):
 def bg():
     global background
     if character_status != CHARACTER_STATUS[4]:
-        for k in background:
-            for j in k:
+        for i in background:
+            for j in i:
                 canvas.move(j, -0.25, 0)
                 if canvas.coords(j)[0] <= (960 - 1920):
                     canvas.coords(j, (960 + int(1920 / 2)), 400)
@@ -144,31 +154,21 @@ def bg():
 def Floor():
     global floor
     if character_status != CHARACTER_STATUS[4]:
-        for k in floor:
-            canvas.move(k, -2, 0)
-            if canvas.coords(k)[0] <= (100 - 640):
-                canvas.coords(k, (100 + ((640 / 2) * 7)), 900)
+        for i in floor:
+            canvas.move(i, -2, 0)
+            if canvas.coords(i)[0] <= (100 - 640):
+                canvas.coords(i, (100 + ((640 / 2) * 7)), 900)
 
     root.after(500, Floor)
 
 
 def jump(event=None):
     global character_status
-    if character_status != (CHARACTER_STATUS[0] or CHARACTER_STATUS[4]):
+    if character_status != CHARACTER_STATUS[0] or CHARACTER_STATUS[4]:
         character_status = CHARACTER_STATUS[2]
 
 
 def overlapping(item1, item2=None):
-    # print(canvas.bbox(character))
-    # overlap = canvas.find_overlapping(canvas.bbox(item1)[0],
-    #                                   canvas.bbox(item1)[1],
-    #                                   canvas.bbox(item1)[2],
-    #                                   canvas.bbox(item1)[3])
-    # try:
-    #     return overlap[1]
-    #
-    # except:
-    #     return 0
     coords_1 = canvas.bbox(item1)
     coords_2 = canvas.coords(item2)
 
@@ -177,7 +177,6 @@ def overlapping(item1, item2=None):
             and ((coords_1[0] <= coords_2[0] <= coords_1[2]) or (coords_1[0] <= coords_2[0] <= coords_1[2])):
         return 1
 
-    print(f"item1 {coords_1} | item2 {coords_2}")
     return 0
 
 
@@ -185,16 +184,14 @@ def obstacles():
     # root.after(random.randint(50, 100))
     # obstacle.append(canvas.create_image(1000, 700, image=random.choices(obstacle_items, weights=[1], k=1)[0]))
     if character_status != CHARACTER_STATUS[4]:
-        for k in obstacle:
-            canvas.move(k, -1.5, 0)
-            if 500 < canvas.coords(k)[0] < 1500:
-                if overlapping(character, k):
+        for i in obstacle:
+            canvas.move(i, -1.5, 0)
+            if 500 < canvas.coords(i)[0] < 1500:
+                if overlapping(character, i):
                     end()
                     break
-            if canvas.coords(k)[0] < -400:
-                print(canvas.coords(k))
-                canvas.move(k, 100000, 0)
-                print(canvas.coords(k))
+            if canvas.coords(i)[0] < -400:
+                canvas.move(i, 100000, 0)
     root.after(200, obstacles)
 
 
@@ -208,6 +205,7 @@ def end():
     canvas.delete(txt)
     # 1920x1080
     time.sleep(0.2)
+    root.unbind_all(f"<{space}>")
     leaderboard_prompt = Toplevel(root)
     leaderboard_prompt.geometry("250x200+960+540")
     leaderboard_prompt.title("Leaderboard")
@@ -230,18 +228,13 @@ def on_quit():
 
     leaderboard_display = tkscroll.ScrolledText(bg="#db9160", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
     leaderboard_display.pack()
-    canvas.create_window(960, 540, window=leaderboard_display, height=700, width=500)
-    # canvas.create_window(220, 10, window=leaderboard_display)
-    print(leaderboard)
+    canvas.create_window(960, 480, window=leaderboard_display, height=700, width=500)
     leaderboard = sort(leaderboard)
-    print(leaderboard)
-    # keys = leaderboard.keys()
-    # print(keys)
     leaderboard_count = 1
-    for k in leaderboard:
-        leaderboard_display.insert(INSERT, f'{leaderboard_count}: {k[0]}  |   {k[1]}\n')
+    leaderboard_display.insert(INSERT, "LEADERBOARD\n\n")
+    for i in leaderboard:
+        leaderboard_display.insert(INSERT, f'{leaderboard_count}: {i[0]}  |   {i[1]}\n')
         leaderboard_count += 1
-
     leaderboard_prompt.destroy()
 
 
@@ -254,7 +247,6 @@ def sort(dictionary):
 
 def submit_username(u=''):
     global leaderboard
-    print(u, score)
     if u != '':
         leaderboard.append([u, score])
         on_quit()
@@ -269,12 +261,12 @@ def save_leaderboard():
     temp_array = []
     for idx in leaderboard:
         temp_array.append(f"{idx[0]}#{idx[1]}")
-    for x in temp_array:
+    for i in temp_array:
         # finds duplicates
-        if x in temp_array:
-            num = temp_array.count(x)
+        if i in temp_array:
+            num = temp_array.count(i)
             for j in range(num-1):
-                temp_array.pop(temp_array.index(x))
+                temp_array.pop(temp_array.index(i))
 
     file = open(leaderboardfile, "w")
     for line in temp_array:
@@ -289,15 +281,14 @@ canvas.pack()
 CHARACTER_STATUS = ("idle", "run", "jump", "fall", "pause")
 prev_status = None  # Used for pause
 # Used in Update subroutine
-i = 0
+update_i = 0
 
-# Setting up background & foreground
+# Setting up background & foreground & menu
 background = [[], [], [], []]
 bg1 = PhotoImage(file="assets/background/bg1.gif").zoom(5)
 bg2 = PhotoImage(file="assets/background/bg2.gif").zoom(5)
 bg3 = PhotoImage(file="assets/background/bg3.gif").zoom(5)
 bg4 = PhotoImage(file="assets/background/bg3.gif").zoom(5)
-# print(bg1.width(), bg1.height())
 background[0].append(canvas.create_image(960, 400, image=bg1))
 background[0].append(canvas.create_image(960, 400, image=bg2))
 background[0].append(canvas.create_image(960, 400, image=bg3))
@@ -327,11 +318,8 @@ for k in menu:
 flr = [PhotoImage(file='assets/foreground/floor1.gif').zoom(4) for k in range(7)]
 floor = [canvas.create_image((100 + (flr[k].width() * k)), 900, image=flr[k]) for k in range(7)]
 
-# dimensions = "image size: %dx%d" % (flr.width(), flr.height())
-# print(flr[0].height())
-
 # Setting up Character
-char_pos = [200, 700]
+char_pos = [200, 677]
 user_idle = [PhotoImage(file="assets/sprites/idle.gif", format=f"gif -index {k}").zoom(10) for k in range(11)]
 user_run = [PhotoImage(file="assets/sprites/run.gif", format=f"gif -index {k}").zoom(10) for k in range(7)]
 user_jump = [PhotoImage(file='assets/sprites/jump.png').zoom(10),
@@ -341,7 +329,6 @@ for k in range(2):
 
 character = canvas.create_image(char_pos[0], char_pos[1], image=user_idle[0])
 character_status = CHARACTER_STATUS[0]
-# print(overlapping(character))
 
 # Setting up obstacles
 obstacle_items = [PhotoImage(file="assets/arrow.gif")]
@@ -360,6 +347,14 @@ pause_button = None
 user_score = 0
 leaderboard_prompt = None
 
+# All keys
+keyboard = [chr(i) for i in range(ord('a'), ord('z'))]
+extra_keys = ["space", "BackSpace", "Up", "Down", "Left", "right",
+              "KP_0", "KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_5", "KP_6", "KP_7", "KP_8", "KP_9",
+              "KP_Add", "KP_Begin", "KP_Decimal", "KP_Delete", "KP_Divide", "KP_0", "KP_Down", "KP_End", "KP_Enter",
+              "KP_Home", "KP_Left", "KP_Right", "KP_Multiple", "KP_Next", "KP_Prior", "KP_Subtract", "KP_Up",
+              "Shift_L", "Shift_R", "Tab", "Caps_Lock"]
+
 # Setting up controls
 space = "space"
 canvas.bind_all(f"<{space}>", jump)
@@ -377,8 +372,6 @@ try:
     file.close()
 except FileNotFoundError:
     leaderboard = []
-print(leaderboard)
-
 
 label = Label(root)
 label.place()
