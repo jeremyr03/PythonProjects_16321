@@ -1,10 +1,15 @@
 from tkinter import *
+import tkinter.scrolledtext as tkscroll
+import tkinter.messagebox as message
 import time
 import random
-from datetime import datetime
 import os
 
+# 1920x1080
+
+root = Tk()
 geometry = '1920x1080'
+root.geometry(geometry)
 
 
 def update(ind):
@@ -40,10 +45,7 @@ def update(ind):
             i = 0
             canvas.itemconfig(character, image=user_run[0])
     elif character_status == CHARACTER_STATUS[4]:
-        ind += 1
-        if ind == 11:
-            ind = 0
-        canvas.itemconfig(character, image=user_idle[ind])
+        pass
 
 
     # print("number of overlaps", overlapping(character))
@@ -51,7 +53,7 @@ def update(ind):
 
 
 def go():
-    global character_status, txt
+    global character_status, txt, pause_button
     for k in menu:
         k.destroy()
     character_status = CHARACTER_STATUS[1]
@@ -66,8 +68,26 @@ def go():
     # scoreboard = Label(text=f"{score} seconds",  bg="#b36029", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
     # canvas.create_window(1000, 100, window=scoreboard, height=100, width=400, )
     start()
+    pause_button = Button(canvas, text="| |", command=pause_command, bg="#db9160", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
+    pause = canvas.create_window(1870, 50, window=pause_button, height=100, width=100, tag="pause_canvas")
+    canvas.tag_raise(pause)
 
     root.after(2500, obstacles)
+
+
+def pause_command():
+    global character_status, prev_status
+    prev_status = character_status
+    character_status = CHARACTER_STATUS[4]
+    pause_button['text'] = "▶"
+    pause_button['command'] = play
+
+
+def play():
+    global character_status
+    character_status = prev_status
+    pause_button['text'] = "| |"
+    pause_button['command'] = pause_command
 
 
 def start():
@@ -79,7 +99,7 @@ def start():
         if (new - old) >= 1:
             try:
                 canvas.delete(txt)
-            except:
+            finally:
                 pass
             score += 1
             old = new
@@ -179,15 +199,95 @@ def obstacles():
 
 
 def end():
-    global character_status
+    global character_status, user_score, leaderboard_prompt
     character_status = CHARACTER_STATUS[4]
 
+    end_screen = canvas.create_window(960, 540)
+    user_score = pause_button['text'][0]
+    canvas.delete('pause_canvas')
+    canvas.delete(txt)
+    # 1920x1080
+    time.sleep(0.2)
+    leaderboard_prompt = Toplevel(root)
+    leaderboard_prompt.geometry("250x200+960+540")
+    leaderboard_prompt.title("Leaderboard")
+    label_1 = Label(leaderboard_prompt, text="Enter username", font=("Times New Roman", 20, "bold"))
+    label_1.pack()
+    username_entry = Entry(leaderboard_prompt, width=15, bd=10)
+    username_entry.insert(10, os.getlogin())
+    username_entry.pack()
+    submit = Button(leaderboard_prompt, text="Submit", command=lambda: submit_username(username_entry.get()))
+    submit.pack()
+    leaderboard_prompt.bind_all("<Return>", lambda: on_quit())
 
-root = Tk()
-root.geometry(geometry)
+    # When prompt window is closed, leaderboard is displayed
+    leaderboard_prompt.protocol("WM_DELETE_WINDOW", on_quit)
+
+
+# When prompt window is closed, leaderboard is displayed
+def on_quit():
+    global leaderboard, leaderboard_prompt
+
+    leaderboard_display = tkscroll.ScrolledText(bg="#db9160", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
+    leaderboard_display.pack()
+    canvas.create_window(960, 540, window=leaderboard_display, height=700, width=500)
+    # canvas.create_window(220, 10, window=leaderboard_display)
+    print(leaderboard)
+    leaderboard = sort(leaderboard)
+    print(leaderboard)
+    # keys = leaderboard.keys()
+    # print(keys)
+    leaderboard_count = 1
+    for k in leaderboard:
+        leaderboard_display.insert(INSERT, f'{leaderboard_count}: {k[0]}  |   {k[1]}\n')
+        leaderboard_count += 1
+
+    leaderboard_prompt.destroy()
+
+
+def sort(dictionary):
+    temp_array = []
+    dictionary = sorted(dictionary, key=lambda elem: elem[1], reverse=True)
+
+    return dictionary
+
+
+def submit_username(u=''):
+    global leaderboard
+    print(u, score)
+    if u != '':
+        leaderboard.append([u, score])
+        on_quit()
+    else:
+        message.showwarning("Not Entered", "Please enter a valid username")
+
+
+def save_leaderboard():
+    close_label = Label(canvas, text="Jungle Run", bg="#b36029", foreground="#fbff19", font=("Times New Roman", 36, "bold"))
+    canvas.create_window(1000, 500, window=close_label, height=100, width=400)
+
+    temp_array = []
+    for idx in leaderboard:
+        temp_array.append(f"{idx[0]}#{idx[1]}")
+    for x in temp_array:
+        # finds duplicates
+        if x in temp_array:
+            num = temp_array.count(x)
+            for j in range(num-1):
+                temp_array.pop(temp_array.index(x))
+
+    file = open(leaderboardfile, "w")
+    for line in temp_array:
+        file.write(line)
+        file.write("\n")
+    file.close()
+    root.destroy()
+
+
 canvas = Canvas(width='9000', height='1080')
 canvas.pack()
-CHARACTER_STATUS = ("idle", "run", "jump", "fall", "game-over")
+CHARACTER_STATUS = ("idle", "run", "jump", "fall", "pause")
+prev_status = None  # Used for pause
 # Used in Update subroutine
 i = 0
 
@@ -256,17 +356,34 @@ for k in random.choices(obstacle_items, [1], k=50):
 score = 0
 old = time.time()
 txt = None
+pause_button = None
+user_score = 0
+leaderboard_prompt = None
 
 # Setting up controls
-left_key, right_key, space = "Left", "Right", "space"
-# canvas.bind_all(f"<{right_key}>", lambda e: right())
+space = "space"
 canvas.bind_all(f"<{space}>", jump)
-# canvas.bind_all(f"<{left_key}>", lambda e: left())
+
+# Setting up leaderboard
+leaderboardfile = "leaderboard.txt"
+try:
+    file = open(leaderboardfile, "r")
+    leaderboard = []
+    for line in file:
+        if line != ("" or "\n"):
+            line = line.strip()
+            user, val = line.split("#")
+            leaderboard.append([user, int(val)])
+    file.close()
+except FileNotFoundError:
+    leaderboard = []
+print(leaderboard)
 
 
 label = Label(root)
 label.place()
 label.pack()
 
+root.protocol("WM_DELETE_WINDOW", save_leaderboard)
 root.after(0, update, 0)
 root.mainloop()
