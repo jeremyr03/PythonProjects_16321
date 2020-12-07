@@ -308,7 +308,7 @@ background[3].append(canvas.create_image(canvas.coords(background[2][3])[0] + bg
 
 menu = [Label(canvas, text="Jungle Run", bg="#b36029", foreground="#fbff19", font=("Times New Roman", 36, "bold")),
         Button(canvas, text="start", bg="#b36029", foreground="#fbff19", command=go, font=("helvetica", 25)),
-        Button(canvas, text="leaderboard", bg="#b36029", foreground="#fbff19", command=go, font=("helvetica", 25)),
+        Button(canvas, text="leaderboard", bg="#b36029", foreground="#fbff19", command=on_quit, font=("helvetica", 25)),
         Button(canvas, text="configure", bg="#b36029", foreground="#fbff19", command=config, font=("helvetica", 25))]
 temp = 100
 for k in menu:
@@ -348,12 +348,10 @@ user_score = 0
 leaderboard_prompt = None
 
 # All keys
-keyboard = [chr(i) for i in range(ord('a'), ord('z'))]
+keyboard = [chr(i) for i in range(ord('a'), ord('z')+1)]
 extra_keys = ["space", "BackSpace", "Up", "Down", "Left", "right",
               "KP_0", "KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_5", "KP_6", "KP_7", "KP_8", "KP_9",
-              "KP_Add", "KP_Begin", "KP_Decimal", "KP_Delete", "KP_Divide", "KP_0", "KP_Down", "KP_End", "KP_Enter",
-              "KP_Home", "KP_Left", "KP_Right", "KP_Multiple", "KP_Next", "KP_Prior", "KP_Subtract", "KP_Up",
-              "Shift_L", "Shift_R", "Tab", "Caps_Lock"]
+              "KP_Down", "KP_End", "KP_Enter", "KP_Left", "KP_Right", "KP_Up"]
 
 # Setting up controls
 space = "space"
@@ -376,6 +374,7 @@ except FileNotFoundError:
 label = Label(root)
 label.place()
 label.pack()
+
 
 root.protocol("WM_DELETE_WINDOW", save_leaderboard)
 root.after(0, update, 0)
